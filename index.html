@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Household Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100 p-4">
+
+  <!-- 1. หน้าล็อกอินด้วยสแกนใบหน้า -->
+  <div id="loginSection" class="max-w-md mx-auto my-10 bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-2xl space-y-5">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+        <i class="fa-solid fa-user-shield text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold">สแกนใบหน้าเข้าสู่ระบบ</h1>
+      <p class="text-xs text-slate-400 mt-1">ระบบยืนยันตัวตนความปลอดภัยสูง</p>
+    </div>
+
+    <div id="statusText" class="text-xs text-center text-amber-400 bg-amber-950/50 py-2 px-3 rounded-xl border border-amber-800">
+      <i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังโหลด AI...
+    </div>
+
+    <div id="webcamContainer" class="hidden relative overflow-hidden rounded-2xl bg-black border-2 border-indigo-500">
+      <video id="video" autoplay muted playsinline class="w-full h-64 object-cover transform -scale-x-100"></video>
+    </div>
+
+    <div class="space-y-2">
+      <button id="btnStartScan" onclick="startCamera()" disabled class="w-full bg-indigo-600 hover:bg-indigo-500 font-bold py-3 rounded-xl transition-all disabled:opacity-50">
+        <i class="fa-solid fa-camera mr-1"></i> เปิดกล้องสแกนใบหน้า
+      </button>
+      <button id="btnCapture" onclick="loginWithFace()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 font-bold py-3 rounded-xl transition-all">
+        <i class="fa-solid fa-key mr-1"></i> ยืนยันตัวตนเข้าใช้งาน
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. หน้าจอสำหรับ Member (ดูได้เฉพาะข้อมูลตนเอง) -->
+  <div id="memberDashboard" class="hidden max-w-2xl mx-auto space-y-6">
+    <div class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border border-slate-700">
+      <div>
+        <span class="bg-indigo-900/80 text-indigo-300 text-xs px-2.5 py-1 rounded-md border border-indigo-700 font-bold">Member</span>
+        <h2 id="memberName" class="text-xl font-bold mt-1">-</h2>
+      </div>
+      <button onclick="logout()" class="bg-rose-900/50 hover:bg-rose-900 text-rose-300 text-xs px-3 py-2 rounded-xl border border-rose-700">ออกจากระบบ</button>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4">
+      <h3 class="text-lg font-bold text-amber-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-folder-user mr-2"></i>แฟ้มข้อมูลส่วนตัวของฉัน</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-700">
+          <p class="text-xs text-slate-400">1. บัตรประชาชน</p>
+          <p id="mIdCard" class="font-mono text-base font-bold text-slate-200 mt-1">-</p>
+        </div>
+        <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-700">
+          <p class="text-xs text-slate-400">2. ทะเบียนบ้าน</p>
+          <p id="mHouseReg" class="font-mono text-base font-bold text-slate-200 mt-1">-</p>
+        </div>
+        <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-700">
+          <p class="text-xs text-slate-400">3. สถานะใบสมรส</p>
+          <p id="mMarriage" class="text-base font-bold text-slate-200 mt-1">-</p>
+        </div>
+        <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-700">
+          <p class="text-xs text-slate-400">4. บัญชีธนาคาร (จำกัดการแสดงผล)</p>
+          <p id="mBankNo" class="font-mono text-base font-bold text-slate-200 mt-1">-</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. หน้าจอสำหรับ Founder (จัดการข้อมูลสมาชิกทุกคน) -->
+  <div id="founderDashboard" class="hidden max-w-5xl mx-auto space-y-6">
+    <div class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border border-slate-700">
+      <div>
+        <span class="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-md border border-amber-500/50 font-bold">Founder / ผู้ก่อตั้ง</span>
+        <h2 id="founderName" class="text-xl font-bold mt-1">-</h2>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="openRegisterModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-xl font-bold">+ เพิ่มสมาชิกใหม่</button>
+        <button onclick="logout()" class="bg-rose-900/50 hover:bg-rose-900 text-rose-300 text-xs px-3 py-2 rounded-xl border border-rose-700">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <!-- รายชื่อสมาชิกทั้งหมด -->
+    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 space-y-4">
+      <h3 class="text-lg font-bold text-indigo-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-users-gear mr-2"></i>จัดการข้อมูลสมาชิกและเอกสารสำคัญทั้งหมด</h3>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
+            <tr>
+              <th class="p-3">ชื่อ-นามสกุล</th>
+              <th class="p-3">1. บัตร ปชช.</th>
+              <th class="p-3">2. ทะเบียนบ้าน</th>
+              <th class="p-3">3. ใบสมรส</th>
+              <th class="p-3">4. บัญชีธนาคาร/รหัส</th>
+              <th class="p-3">สิทธิ์</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y divide-slate-700/50">
+            <!-- ข้อมูลจะถูกดึงมาใส่ด้วย JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ** ใส่ URL Google Apps Script Web App ของคุณ **
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxtRnh1XcX4F4U20OJvT2G_mQedARanFGlXZ4eWaUnpbdjPjiHEu-pTKuHUfSfFi6H3/exec";
+
+    let currentUser = null;
+
+    // โหลดโมเดล AI Face API
+    async function loadModels() {
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+      try {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        
+        const statusEl = document.getElementById('statusText');
+        statusEl.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ระบบ AI พร้อมใช้งาน';
+        statusEl.className = "text-xs text-center text-emerald-400 bg-emerald-950/50 py-2 px-3 rounded-xl border border-emerald-800";
+        document.getElementById('btnStartScan').disabled = false;
+      } catch (err) {
+        document.getElementById('statusText').innerText = "โหลด AI ไม่สำเร็จ";
+      }
+    }
+    window.onload = loadModels;
+
+    async function startCamera() {
+      document.getElementById('webcamContainer').classList.remove('hidden');
+      document.getElementById('btnStartScan').classList.add('hidden');
+      document.getElementById('btnCapture').classList.remove('hidden');
+      const video = document.getElementById('video');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      video.srcObject = stream;
+    }
+
+    async function loginWithFace() {
+      const video = document.getElementById('video');
+      const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+      
+      if (!detection) {
+        alert("ไม่พบใบหน้า กรุณาจัดตำแหน่งให้อยู่กลางกล้อง");
+        return;
+      }
+
+      const descriptor = Array.from(detection.descriptor);
+      
+      // ส่งค่าเวกเตอร์ใบหน้าไปตรวจสอบที่ Google Apps Script API
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'verifyFaceUser', descriptor: descriptor })
+      }).then(r => r.json());
+
+      if (res.success) {
+        currentUser = res.user;
+        document.getElementById('loginSection').classList.add('hidden');
+
+        // แยกสิทธิ์การเข้าถึงระหว่าง Founder และ Member
+        if (currentUser.role === 'Founder' || currentUser.role === 'Admin') {
+          renderFounderDashboard();
+        } else {
+          renderMemberDashboard();
+        }
+      } else {
+        alert("ไม่พบใบหน้าในระบบ หรือไม่อนุญาตให้เข้าถึง");
+      }
+    }
+
+    // สำหรับแสดงผลผู้ใช้งานทั่วไป (เห็นเฉพาะข้อมูลตนเอง)
+    async function renderMemberDashboard() {
+      document.getElementById('memberDashboard').classList.remove('hidden');
+      document.getElementById('memberName').innerText = currentUser.name;
+
+      // ดึงโปรไฟล์เฉพาะของตนเองผ่าน API
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'getUserProfile', userId: currentUser.id })
+      }).then(r => r.json());
+
+      if (res.success) {
+        const p = res.profile;
+        document.getElementById('mIdCard').innerText = p.idCard || '-';
+        document.getElementById('mHouseReg').innerText = p.houseReg || '-';
+        document.getElementById('mMarriage').innerText = p.marriageCert || 'ไม่มี/ไม่ระบุ';
+        document.getElementById('mBankNo').innerText = p.bankNo ? `***-*-${p.bankNo.slice(-4)}` : '-';
+      }
+    }
+
+    // สำหรับแสดงผลผู้ก่อตั้ง (Founder เห็นข้อมูลทั้งหมด)
+    async function renderFounderDashboard() {
+      document.getElementById('founderDashboard').classList.remove('hidden');
+      document.getElementById('founderName').innerText = currentUser.name;
+
+      // ดึงข้อมูลสมาชิกทุกคน
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'getAllUsersForFounder', founderId: currentUser.id })
+      }).then(r => r.json());
+
+      if (res.success) {
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+        
+        res.users.forEach(u => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-700/30">
+              <td class="p-3 font-bold text-white">${u.name}</td>
+              <td class="p-3 font-mono">${u.idCard || '-'}</td>
+              <td class="p-3 font-mono">${u.houseReg || '-'}</td>
+              <td class="p-3">${u.marriageCert || '-'}</td>
+              <td class="p-3 font-mono text-emerald-400">${u.bankNo || '-'} / Pass: ${u.bankPass || '***'}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${u.role === 'Founder' ? 'bg-amber-900/50 text-amber-300' : 'bg-slate-700 text-slate-300'}">${u.role}</span></td>
+            </tr>
+          `;
+        });
+      }
+    }
+
+    function logout() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>
