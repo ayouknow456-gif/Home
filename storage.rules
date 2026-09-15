@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Uploads (face photos, ID/passport scans, repair photos) go through
+// server API routes using the Admin SDK. Direct client access is blocked.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
