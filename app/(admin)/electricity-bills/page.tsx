@@ -1,6 +1,6 @@
 import { adminDb } from "@/lib/firebase-admin";
 import type { AppUser, Bill } from "@/lib/types";
-import NewBillForm from "../bills/NewBillForm";
+import NewBillForm from "./NewBillForm";
 
 export default async function AdminBillsPage() {
   const [usersSnap, billsSnap] = await Promise.all([
