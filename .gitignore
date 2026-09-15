@@ -1,8 +1,7 @@
 node_modules/
 .next/
+out/
 .env.local
 .env*.local
-public/models/*.bin
-public/models/*-shard*
-npm-debug.log*
 .DS_Store
+*.log
