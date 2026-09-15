@@ -9,7 +9,7 @@ interface NavItem { label: string; href: string; icon: string; }
 const ADMIN_NAV: NavItem[] = [
   { label: "แดชบอร์ด", href: "/admin/dashboard", icon: "📊" },
   { label: "สมาชิก", href: "/admin/members", icon: "👥" },
-  { label: "บิลไฟ", href: "/admin/electricity-bills", icon: "⚡" },
+  { label: "บิลไฟ", href: "/admin/bills", icon: "⚡" },
   { label: "ยืม-คืน", href: "/admin/borrows", icon: "📦" },
   { label: "แจ้งซ่อม", href: "/admin/repairs", icon: "🔧" },
   { label: "Log", href: "/admin/logs", icon: "🗒️" },
